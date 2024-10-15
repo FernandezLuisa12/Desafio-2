@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-
 using namespace std;
 
 class Surtidor;
@@ -40,13 +39,19 @@ private:
     int id;
     string modelo_maquina;
     float ventas;
+
 public:
     Surtidor(int _id, string _modelo){
         id =_id;
-        string modelo_maquina = _modelo;
+        modelo_maquina = _modelo;
         ventas = 0.0;
     }
-    
+  
+
+    int obtenerId() const {
+    return id;  
+    }
+
     void vender(float cantidad){
         if (cantidad > 0 ){
             ventas += cantidad; //Acumula cantidad vendida
@@ -91,40 +96,58 @@ public:
         surtidores = new Surtidor*[max_surtidores]; // reserva de memoria para los surtidores
     }
     
+     // Métodos getter
+    string getNombreEstacion() const {
+        return nombre_estacion;
+    }
+
+    string getGerente() const {
+        return gerente;
+    }
+
+    string getRegion() const {
+        return region;
+    }
+
+    long getid_Estacion(){
+
+        return id_estacion;
+    }
     void agregarSurtidor( string modelo){
 
         if (contar_surtidores < max_surtidores){
             surtidores[contar_surtidores] = new Surtidor(contar_surtidores +1, modelo);
             contar_surtidores ++;
             maquinas_espendedoras ++;
-            cout << "se agragado exitosamente un surtigo. Modelo" << modelo << "Total de surtidores: " << contar_surtidores << endl;
+           cout << "Se ha agregado exitosamente un surtidor. Modelo " << modelo << ". Total de surtidores: " << contar_surtidores << endl;
+
         }
     }
+    
 
     void eliminarSurtidor(int id){
         for (int i = 0; i < contar_surtidores; i++){
-            if (surtidores[1] -> id == id) {
-            if (surtidores[i]->obtenerVentas() == id) {  
+            if (surtidores[i] -> obtenerId()  == id) {
+
+               if (surtidores[i]->obtenerVentas() == 0) {  
                 delete surtidores[i];
                 for(int j = i; j < contar_surtidores -1; j++){
                     surtidores [j] = surtidores [j + 1]; // reorganizar el arreglo
                 }
                 contar_surtidores --;
                 maquinas_espendedoras --;
-                cout << " El surtido por ID" << id << "Fue eliminando. El total de surtidores actual es" << contar_surtidores << endl;
+                cout << "El surtidor con ID " << id << " fue eliminado. El total de surtidores actual es " << contar_surtidores << endl;
+
                 return;
                 
+             
             }
         }
-        cout << "Surtidor con ID " << id << " no encontrado." << endl;
-
-
+        cout << "Surtidor con ID " << id << " no encontrado." << endl;}
     }
-   
-
-    void activarSurtidor(int id){
+    void activarSurtidor(int id ){
         for (int i = 0; i < contar_surtidores; i++) {
-            if (surtidores[i +1] == id) {
+            if (surtidores[i] -> obtenerId() == id) {
                 cout << "Surtidor con ID " << id << " activado." << endl;
                 return;
             }
@@ -134,24 +157,25 @@ public:
 
     void desactivarSurtidor(int id ){
         for (int i = 0; i < contar_surtidores; i++) {
-            if ( surtidores[i+1]== id) {
+            if ( surtidores[i] -> obtenerId()== id) {
                 cout << "Surtidor con ID " << id << " desactivado." << endl;
                 return;
             }
         }
         cout << "Surtidor con ID " << id << " no encontrado." << endl;
     }
-    consultarHistorico();
+   // consultarHistorico();
 
     //asignarCapacidad();
     //verificarFugas();
+
     ~Estacion(){
         for (int i = 0; i < contar_surtidores; i++){
             delete surtidores[i]; // libera la memoria de los surtidores
         }
         delete[] surtidores;
     }
-    }
+    
 };
    
 class Red{
@@ -186,7 +210,7 @@ public:
     void eliminarEstacion(long codigo) {
         bool encontrado = false;
         for (int i = 0; i < totalEstaciones; i++) {
-            if (estaciones[i]->id_estacion == codigo) {  // accedemos -> a la estacion atraves del codigo 
+            if (estaciones[i]->getid_Estacion() == codigo) {  // accedemos -> a la estacion atraves del codigo 
                 delete estaciones[i];  // Elimina la estacion
                 for (int j = i; j < totalEstaciones - 1; j++) {
                     estaciones[j] = estaciones[j + 1];  // Reorganizar el arreglo
@@ -206,7 +230,7 @@ public:
     void calcularVentas(){
         cout << "Calculando ventas para las " << totalEstaciones << " estaciones de la red..." << endl;
         for (int i = 0; i < totalEstaciones; i++) {
-            cout << "Estacion: " << estaciones[i]->nombre_estacion << " (Codigo: " << estaciones[i]->id_estacion << ")" << endl;
+            cout << "Estacion: " << estaciones[i]->getNombreEstacion() << " (Codigo: " << estaciones[i]->getid_Estacion() << ")" << endl;
             // falta agregar logica para calcular ventas, por ejemplo, simulando un valor.
         }
     }
@@ -219,33 +243,33 @@ public:
     // Metodo para mostrar informacion de la red y sus estaciones
     void mostrarEstaciones() const {
         cout << "Red: " << nombre_red << endl;
-        for (int i = 0, i < totalEstaciones; i++){
-             cout << "Estacion " << i + 1 << ": " << estaciones[i]->nombre_estacion 
-                 << ", Codigo: " << estaciones[i]->id_estacion
-                 << ", Gerente: " << estaciones[i]->gerente 
-                 << ", Region: " << estaciones[i]->region << endl;
+        for (int i = 0; i < totalEstaciones; i++){
+             cout << "Estacion " << i + 1 << ": " << estaciones[i]->getNombreEstacion() 
+                 << ", Codigo: " << estaciones[i]->getid_Estacion()
+                 << ", Gerente: " << estaciones[i]->getGerente()
+                 << ", Region: " << estaciones[i]->getRegion() << endl;
         }
     }
 };
 
 int main() {
     Red miRed("TerMax", 10000);
-    cout << "Bienvenido a la Red de Servicios " << miRed << endl;
+    cout << "Bienvenidos a la red de Servicios TerMax" << endl;
 
     int op_menu = 1;
     while (op_menu != 0) {
-        cout << "\n- Menú principal -" << endl;
-        cout << "[1] Gestión de Red" << endl;
-        cout << "[2] Gestión de Estación" << endl;
+        cout << "\n- Menu principal -" << endl;
+        cout << "[1] Gestion de Red" << endl;
+        cout << "[2] Gestion de Estacion" << endl;
         cout << "[0] Salir" << endl;
         cin >> op_menu;
 
         switch (op_menu) {
             case 1: {
                 int op_submenu;
-                cout << "- Gestión de Red -" << endl;
-                cout << "[1] Agregar Estación" << endl;
-                cout << "[2] Eliminar Estación" << endl;
+                cout << "- Gestion de Red -" << endl;
+                cout << "[1] Agregar Estacion" << endl;
+                cout << "[2] Eliminar Estacion" << endl;
                 cout << "[3] Calcular Ventas" << endl;
                 cout << "[4] Fijar Precios" << endl;
                 cin >> op_submenu;
@@ -254,22 +278,22 @@ int main() {
                     case 1: {
                         string nombre, gerente, region, ubicacionGPS;
                         long codigo;
-                        cout << "Ingrese el nombre de la estación: ";
+                        cout << "Ingrese el nombre de la estacion: ";
                         cin >> nombre;
-                        cout << "Ingrese el código de la estación: ";
+                        cout << "Ingrese el código de la estacion: ";
                         cin >> codigo;
                         cout << "Ingrese el nombre del gerente: ";
                         cin >> gerente;
-                        cout << "Ingrese la región: ";
+                        cout << "Ingrese la region: ";
                         cin >> region;
-                        cout << "Ingrese la ubicación GPS: ";
+                        cout << "Ingrese la ubicacion GPS: ";
                         cin >> ubicacionGPS;
                         miRed.agregarEstacion(nombre, codigo, gerente, region, ubicacionGPS);
                         break;
                     }
                     case 2: {
                         long codigo;
-                        cout << "Ingrese el código de la estación a eliminar: ";
+                        cout << "Ingrese el código de la estacion a eliminar: ";
                         cin >> codigo;
                         miRed.eliminarEstacion(codigo);
                         break;
@@ -290,7 +314,7 @@ int main() {
 
             case 2: {
                 int op_submenu;
-                cout << "- Gestión de Estación -" << endl;
+                cout << "- Gestion de Estacion -" << endl;
                 cout << "[1] Agregar Surtidor" << endl;
                 cout << "[2] Eliminar Surtidor" << endl;
                 cin >> op_submenu;
@@ -320,9 +344,9 @@ int main() {
                 break;
 
             default:
-                cout << "Opción no válida." << endl;
+            cout << "Opción no válida." << endl;
+      
         }
     }
-
-    return 0;
+     return 0;
 }
