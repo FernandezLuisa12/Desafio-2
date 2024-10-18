@@ -7,17 +7,24 @@ using namespace std;
 class Surtidor{
 private:
     int id;
+    int id_estacion;
     string modelo_maquina;
     float ventas;
 
 public:
-    Surtidor(int _id, string _modelo);
-    int obtenerId() const {
+    Surtidor(int _id, int _id_estacion, string modelo);
+    int getId_surtidor() const {
         return id;
+    }
+    int getId_estacion() const{
+        return id_estacion;
+    }
+    string getModelo(){
+        return modelo_maquina;
     }
     void vender(float cantidad, string region, const string &precio_combustible);
     float obtenerVentas() const { // metodo para total de ventas
-        return ventas; // Total de ventas
+        return ventas; // total de ventas
     }
     ~Surtidor(){//Destructor
         cout<< "Destructor del Surtidor ID " << id << " llamado." << endl;
@@ -26,20 +33,30 @@ public:
 
 class Estacion{
 private:
-    long id_estacion;
+    int id_estacion;
     string gerente;
     string region;
     string ubicacion;
-    int maquinas_espendedoras; // Total de surtidores
+    int maquinas_espendedoras;
     string nombre_estacion;
-    Surtidor** surtidores; // Puntero a un arreglo de punteros a Surtidor
-    int max_surtidores;    // Maximo numero de surtidores permitidos
+    Surtidor* surtidores[144]; // Arreglo de surtidores
     int contar_surtidores; // Contador de surtidores activos
-
+    double capacidad_tanque[4];// Para Regular, Premium, EcoExtra
+    double vendidos[4]; // Para rastrear lo vendido por tipo
 public:
     // Constructor
-    Estacion(string, long, string, string, string, int);
-    // Métodos getter
+    Estacion(string, int, string, string, string);
+    // Métodos getter y setter
+    void getCapacidad(double* _capacidad) const {
+        for (int i = 0; i < 4; ++i) {
+            _capacidad[i] = capacidad_tanque[i];
+        }
+    }
+    void getVendidos(double* _vendidos) const {
+        for (int i = 0; i < 4; ++i) {
+            _vendidos[i] = capacidad_tanque[i];
+        }
+    }
     string getNombreEstacion() const {
         return nombre_estacion;
     }
@@ -49,23 +66,27 @@ public:
     string getRegion() const {
         return region;
     }
-    long getid_Estacion(){
+    int getid_Estacion(){
         return id_estacion;
     }
-    void agregarSurtidor( string modelo);
-    void eliminarSurtidor(int id);
+    string getUbicacion(){
+        return ubicacion;
+    }
+    bool verificarSurtidor(int id, int codigo);
+    void mostrarSurtidores(int id_estacion);
+    void agregarSurtidor(int id_estacion);
+    void eliminarSurtidor(int id, int codigo);
     void activarSurtidor(int id );
     void desactivarSurtidor(int id );
     static string cambiar_precios(string region, const string &precio_combustible);
+    void verificarFugas(int id, const double (&capacidad_tanque)[4], const double (&vendidos)[4]);
     // consultarHistorico();
-    //asignarCapacidad();
-    //verificarFugas();
     ~Estacion();
 };
 
 class Red{
 private:
-    Estacion* estaciones[12]; // Maximo de estaciones de servicios
+    Estacion* estaciones[12]; // Estaciones de servicios
     string precio_combustible;
     int totalEstaciones;
     string nombre_red;
@@ -73,25 +94,16 @@ public:
     int getTotalEstaciones(){
         return totalEstaciones;
     }
+    void getDatos(int, string &nom, int &id, string &ger, string &reg, string &ubi);
     Red(string _nombre_red, string _precio_combustible);
+    bool verificarEstacion(int codigo);
     void agregarEstacion();
-    void eliminarEstacion(long codigo); // Metodo para eliminar una estacion por su codigo
+    void eliminarEstacion(int codigo); // Metodo para eliminar una estacion por su codigo
     void calcularVentas();
     void fijarPrecios();
     // Metodo para mostrar informacion de la red y sus estaciones
     void mostrarEstaciones() const;
     ~Red();
-};
-
-
-class Tanque{
-private:
-    int capacidad[3];// Para Regular, Premium, EcoExtra
-    int vendidos [3]; // Para rastrear lo vendido por tipo
-public:
-    Tanque();
-    bool verificarFugas();
-    void vender(int tipo, int cantidad);
 };
 
 class Venta{
@@ -111,10 +123,14 @@ public:
 };
 
 int main() {
-    Red miRed("TerMax", "10000:10000:10000");
-    cout << "Bienvenidos a la red de Servicios TerMax" << endl;
-
-    int op_menu = 1;
+    string nombre, gerente, region, ubicacion;
+    int codigo, op_menu = 1, id_estacion;
+    Red miRed("TerMax", "4000:5000:6000");
+    cout << "- Bienvenidos a la red de Servicios TerMax -" << endl;
+    cout << "Registre una estacion para iniciar la Red" << endl;
+    miRed.agregarEstacion();
+    miRed.getDatos(codigo, nombre, id_estacion,gerente, region, ubicacion);
+    Estacion miEstacion(nombre, id_estacion, gerente, region, ubicacion);
     while (op_menu != 0) {
         cout << "\n- Menu principal -" << endl;
         cout << "[1] Gestion de Red" << endl;
@@ -124,7 +140,7 @@ int main() {
 
         switch (op_menu) {
         case 1: {
-            int op_submenu;
+            int op_submenu = 1;
             cout << "- Gestion de Red -" << endl;
             cout << "[1] Agregar Estacion" << endl;
             cout << "[2] Eliminar Estacion" << endl;
@@ -138,7 +154,7 @@ int main() {
                 break;
             }
             case 2: {
-                long codigo;
+                int codigo;
                 if (miRed.getTotalEstaciones() == 0){
                     cout << "No se encontraron estaciones registradas" << endl;
                 }
@@ -160,44 +176,74 @@ int main() {
             }
             break;
         }
-
         case 2: {
-            int op_submenu;
-            cout << "- Gestion de Estacion -" << endl;
-            cout << "[1] Agregar Surtidor" << endl;
-            cout << "[2] Eliminar Surtidor" << endl;
-            cin >> op_submenu;
-
-            switch (op_submenu) {
-            case 1: {
-                string modelo;
-                cout << "Ingrese el modelo del surtidor: ";
-                cin >> modelo;
-                // Aquí deberías tener una referencia a una estación específica para agregar el surtidor.
-                // Por simplicidad, este ejemplo no está asociado a una estación concreta.
-                break;
+            miRed.mostrarEstaciones();
+            cout << "Ingrese el codigo de la estacion: ";
+            cin >> codigo;
+            if (miRed.verificarEstacion(codigo)){
+                miRed.getDatos(codigo, nombre, id_estacion,gerente, region, ubicacion);
+                int op_submenu = 1;
+                while (op_submenu != 0){
+                    cout << endl << "- Gestion de Estacion " << nombre << " -"<< endl;
+                    cout << "[1] Agregar Surtidor" << endl;
+                    cout << "[2] Eliminar Surtidor" << endl;
+                    cout << "[3] Verificar Fugas" << endl;
+                    cout << "[0] Salir" << endl;
+                    cin >> op_submenu;
+                    switch (op_submenu) {
+                    case 1: {
+                        miEstacion.agregarSurtidor(id_estacion);
+                        break;
+                    }
+                    case 2: {
+                        int id;
+                        miEstacion.mostrarSurtidores(id_estacion);
+                        cout << "Ingrese el ID del surtidor a eliminar: ";
+                        cin >> id;
+                        miEstacion.eliminarSurtidor(id, id_estacion);
+                        break;
+                    }
+                    case 3:{
+                        double _capacidad[4];
+                        double _vendidos[4];
+                        miEstacion.getCapacidad(_capacidad);
+                        miEstacion.getVendidos(_vendidos);
+                        miEstacion.verificarFugas(id_estacion, _capacidad, _vendidos);
+                    }
+                    case 0:{
+                        cout << "Saliendo de la estacion..." << endl;
+                        break;
+                    }
+                    }
+                }
             }
-            case 2: {
-                int id;
-                cout << "Ingrese el ID del surtidor a eliminar: ";
-                cin >> id;
-                // Similarmente, aquí debería hacerse la búsqueda del surtidor en una estación específica.
-                break;
-            }
-            }
+            else
+                cout << "Estacion con codigo " << codigo << " no encontrada." << endl;
             break;
         }
 
         case 0:
             cout << "Saliendo del sistema..." << endl;
             break;
-
         default:
-            cout << "Opción no válida." << endl;
+            cout << "Opcion no valida." << endl;
 
         }
     }
     return 0;
+}
+
+void Red::getDatos(int codigo, string &nom, int &id, string &ger, string &reg, string &ubi)
+{
+    for (int i = 0; i < totalEstaciones; i++) {
+        if (estaciones[i]->getid_Estacion() == codigo) {
+            nom = estaciones[i]->getNombreEstacion();
+            id = estaciones[i]->getid_Estacion();
+            ger = estaciones[i]->getGerente();
+            reg = estaciones[i]->getRegion();
+            ubi = estaciones[i]->getUbicacion();
+        }
+    }
 }
 
 Red::Red(string _nombre_red, string _precio_combustible) {  // Inicializo el constructor
@@ -206,15 +252,21 @@ Red::Red(string _nombre_red, string _precio_combustible) {  // Inicializo el con
     nombre_red = _nombre_red;
 }
 
+bool Red::verificarEstacion(int codigo){
+    for (int i = 0; i < totalEstaciones; i++) {
+        if (estaciones[i]->getid_Estacion() == codigo) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Red::agregarEstacion() {
-    if (totalEstaciones <= 12) {
+    if (totalEstaciones < 12) {
         string nombre, gerente, region, ubicacionGPS;
-        long codigo;
-        int op_region = 1;
-        cout << "Ingrese el nombre de la estacion: ";
+        int codigo, op_region = 1;
+        cout << endl << "Ingrese el nombre de la estacion: ";
         cin >> nombre;
-        cout << "Ingrese el codigo de la estacion: ";
-        cin >> codigo;
         cout << "Ingrese el nombre del gerente: ";
         cin >> gerente;
         cout << "Selecione la region:" << endl;
@@ -234,7 +286,8 @@ void Red::agregarEstacion() {
                 region = "Sur";
             cout << "Ingrese la ubicacion GPS: ";
             cin >> ubicacionGPS;
-            estaciones[totalEstaciones] = new Estacion(nombre, codigo, gerente, region, ubicacionGPS, 10); // Asumir max surtidores como 10
+            codigo = 3960 + (totalEstaciones +1);
+            estaciones[totalEstaciones] = new Estacion(nombre, codigo, gerente, region, ubicacionGPS); // Asumir max surtidores como 6
             totalEstaciones++;
             cout << "Se agrego la estacion " << nombre << " con codigo " << codigo << " correctamente" << endl;
         }
@@ -243,24 +296,23 @@ void Red::agregarEstacion() {
         cout << "No se pueden agregar mas estaciones" << endl;
 }
 
-void Red::eliminarEstacion(long codigo) {
-    bool encontrado = false;
-    for (int i = 0; i < totalEstaciones; i++) {
-        if (estaciones[i]->getid_Estacion() == codigo) {  // accedemos -> a la estacion atraves del codigo
-            delete estaciones[i];  // Elimina la estacion
-            for (int j = i; j < totalEstaciones - 1; j++) {
-                estaciones[j] = estaciones[j + 1];  // Reorganizar el arreglo
+void Red::eliminarEstacion(int codigo) {
+    if(verificarEstacion(codigo)){
+        for (int i = 0; i < totalEstaciones; i++) {
+            if (estaciones[i]->getid_Estacion() == codigo) {  // accedemos -> a la estacion atraves del codigo
+                delete estaciones[i];  // Elimina la estacion
+                for (int j = i; j < totalEstaciones - 1; j++) {
+                    estaciones[j] = estaciones[j + 1];  // Reorganizar el arreglo
+                }
+                estaciones[totalEstaciones - 1] = nullptr; // libera el espacio de memoria
+                totalEstaciones -= 1;
+                cout << "Estacion eliminada correctamente." << endl;
+                break;
             }
-            estaciones[totalEstaciones - 1] = nullptr; // libera el espacio de memoria
-            totalEstaciones -= 1;
-            encontrado = true;
-            cout << "Estacion eliminada correctamente." << endl;
-            break;
         }
     }
-    if (!encontrado) {
+    else
         cout << "Estacion con codigo " << codigo << " no encontrada." << endl;
-    }
 }
 
 void Red::calcularVentas(){
@@ -281,9 +333,13 @@ void Red::fijarPrecios(){
     cin >> precio_ecoextra;
     precio_combustible = precio_regular + ":" + precio_premium + ":" + precio_ecoextra;
     cout << "Nuevos precios fijados." << endl;
-    cout << "Combustible Regular: " << precio_regular << endl;
-    cout << "Combustible Premium: " << precio_premium << endl;
-    cout << "Combustible EcoExtra: " << precio_ecoextra << endl;
+    cout << "Combustible Regular: $" << precio_regular << endl;
+    cout << "Combustible Premium: $" << precio_premium << endl;
+    cout << "Combustible EcoExtra: $" << precio_ecoextra << endl;
+    cout << "La variacion de precios por region fue establecida de la siguienta manera:" << endl;
+    cout << "Norte: +12%" << endl;
+    cout << "Centro: +10%" << endl;
+    cout << "Sur: +15%" << endl;
 }
 
 void Red::mostrarEstaciones() const {
@@ -302,7 +358,7 @@ Red::~Red() {  // Destructor libera memoria dinamica
     }
 }
 
-Estacion::Estacion(string _nombre, long _id, string _gerente, string _region, string _ubicacion, int _max){
+Estacion::Estacion(string _nombre, int _id, string _gerente, string _region, string _ubicacion){
     nombre_estacion = _nombre;
     id_estacion = _id;
     gerente = _gerente;
@@ -310,39 +366,86 @@ Estacion::Estacion(string _nombre, long _id, string _gerente, string _region, st
     ubicacion = _ubicacion;
     maquinas_espendedoras = 0;
     contar_surtidores = 0;
-    max_surtidores = _max;
-    surtidores = new Surtidor*[max_surtidores]; // reserva de memoria para los surtidores
-}
-
-void Estacion::agregarSurtidor(string modelo){
-    if (contar_surtidores < max_surtidores){
-        surtidores[contar_surtidores] = new Surtidor(contar_surtidores +1, modelo);
-        contar_surtidores ++;
-        maquinas_espendedoras ++;
-        cout << "Se ha agregado exitosamente un surtidor. Modelo " << modelo << ". Total de surtidores: " << contar_surtidores << endl;
+    srand(static_cast<unsigned int>(time(0))); // Inicializa la semilla
+    capacidad_tanque[0] = _id;
+    vendidos[0] = _id;
+    for (int i = 1; i < 4; i++) {
+        capacidad_tanque[i] = rand() % 101 + 100; // Capacidad aleatoria entre 100 y 200 litros
+        vendidos[i] = 0;
     }
 }
 
-void Estacion::eliminarSurtidor(int id){
-    for (int i = 0; i < contar_surtidores; i++){
-        if (surtidores[i] -> obtenerId()  == id) {
-            if (surtidores[i]->obtenerVentas() == 0) {
+void Estacion::mostrarSurtidores(int id_estacion){
+    for (int i = 0; i < contar_surtidores; i++) {
+        if (surtidores[i]->getId_estacion() == id_estacion){
+            cout << "Surtidor " << i + 1 << ": "
+                 << " ID: " << surtidores[i]->getId_surtidor()
+                 << ", Modelo: " << surtidores[i]->getModelo() << endl;
+        }
+    }
+}
+
+void Estacion::agregarSurtidor(int id_estacion){
+    int id_surtidor, op_modelo; string modelo;
+    if (contar_surtidores < 12){
+        cout << "Seleccione un modelo de maquina para asignarle:" << endl;
+        cout << "[1] MT4523" << endl;
+        cout << "[2] MT5631" << endl;
+        cout << "[3] MT6752" << endl;
+        cin >> op_modelo;
+        if (op_modelo != 1 && op_modelo != 2 && op_modelo != 3){
+            cout << "Modelo no valido. No se pudo agregar el surtidor" << endl;
+        }
+        else{
+            if (op_modelo == 1)
+                modelo = "MT4523";
+            else if(op_modelo == 2)
+                modelo = "MT5631";
+            else
+                modelo = "MT6752";
+            id_surtidor = 4000 + (contar_surtidores + 1);
+            surtidores[contar_surtidores] = new Surtidor(id_surtidor, id_estacion, modelo);
+            contar_surtidores ++;
+            maquinas_espendedoras ++;
+            cout << "Se ha agregado exitosamente un surtidor con id " << id_surtidor << ". Total de surtidores: " << contar_surtidores << endl;
+        }
+    }
+    else
+        cout << "No se pueden agregar mas surtidores." << endl;
+}
+
+bool Estacion::verificarSurtidor(int id, int codigo){
+    for (int i = 0; i < contar_surtidores; i++) {
+        if (surtidores[i]->getId_surtidor() == id && surtidores[i]->getId_estacion() == codigo) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Estacion::eliminarSurtidor(int id, int codigo){
+    if(verificarSurtidor(id, codigo)){
+        for (int i = 0; i < contar_surtidores; i++){
+            if (surtidores[i]->getId_surtidor() == id){
                 delete surtidores[i];
                 for(int j = i; j < contar_surtidores -1; j++){
-                    surtidores [j] = surtidores [j + 1]; // reorganizar el arreglo
+                    surtidores[j] = surtidores[j + 1]; // reorganizar el arreglo
                 }
+                surtidores[contar_surtidores - 1] = nullptr;
                 contar_surtidores --;
                 maquinas_espendedoras --;
                 cout << "El surtidor con ID " << id << " fue eliminado. El total de surtidores actual es " << contar_surtidores << endl;
                 return;
             }
         }
-        cout << "Surtidor con ID " << id << " no encontrado." << endl;}
+    }
+    else
+        cout << "Surtidor con ID " << id << "no existe o no pertenece a la estacion." << endl;
 }
 
 void Estacion::activarSurtidor(int id){
     for (int i = 0; i < contar_surtidores; i++) {
-        if (surtidores[i] -> obtenerId() == id) {
+        if (surtidores[i] -> getId_surtidor() == id) {
             cout << "Surtidor con ID " << id << " activado." << endl;
             return;
         }
@@ -352,7 +455,7 @@ void Estacion::activarSurtidor(int id){
 
 void Estacion::desactivarSurtidor(int id){
     for (int i = 0; i < contar_surtidores; i++) {
-        if ( surtidores[i] -> obtenerId()== id) {
+        if ( surtidores[i] -> getId_surtidor()== id) {
             cout << "Surtidor con ID " << id << " desactivado." << endl;
             return;
         }
@@ -360,60 +463,60 @@ void Estacion::desactivarSurtidor(int id){
     cout << "Surtidor con ID " << id << " no encontrado." << endl;
 }
 
-string Estacion::cambiar_precios(string region, const string &precio_combustible){
+string Estacion::cambiar_precios(string region, const string &precio_combustible) {
     string nuevo_precio;
-    int regular, premium, ecoextra; regular = 0; premium = 0; ecoextra = 0;
+    float regular = 0, premium = 0, ecoextra = 0, porcentaje = 0.0;
+
     size_t pos1 = precio_combustible.find(":");
-    if (pos1 != string::npos){
-        regular = stoi(precio_combustible.substr(0, pos1));
-        size_t pos2 = precio_combustible.find(":");
-        if (pos2 != string::npos){
-            premium = stoi(precio_combustible.substr(pos1 +1, pos2 - pos1 -1));
-            ecoextra = stoi(precio_combustible.substr(pos2 +1));
+    if (pos1 != string::npos) {
+        regular = stof(precio_combustible.substr(0, pos1));
+        size_t pos2 = precio_combustible.find(":", pos1 + 1);
+        if (pos2 != string::npos) {
+            premium = stof(precio_combustible.substr(pos1 + 1, pos2 - pos1 - 1));
+            ecoextra = stof(precio_combustible.substr(pos2 + 1));
         }
     }
-    if (region == "Norte"){
-        regular += 1000;
-        premium += 1000;
-        ecoextra += 1000;
+
+    if (region == "Norte") {
+        porcentaje = 12.0;
+    } else if (region == "Centro") {
+        porcentaje = 10.0;
+    } else {
+        porcentaje = 15.0;
     }
-    else if (region == "Centro"){
-        regular += 800;
-        premium += 800;
-        ecoextra += 800;
-    }
-    else{
-        regular += 1200;
-        premium += 1200;
-        ecoextra += 1200;
-    }
+
+    regular += regular * (porcentaje / 100.0);
+    premium += premium * (porcentaje / 100.0);
+    ecoextra += ecoextra * (porcentaje / 100.0);
+
     nuevo_precio = to_string(regular) + ":" + to_string(premium) + ":" + to_string(ecoextra);
     return nuevo_precio;
 }
 
+
 Estacion::~Estacion(){
-    for (int i = 0; i < contar_surtidores; i++){
-        delete surtidores[i]; // libera la memoria de los surtidores
+    for (int i = 0; i < contar_surtidores; ++i) {
+        delete surtidores[i];
     }
-    delete[] surtidores;
 }
 
-Surtidor::Surtidor(int _id, string _modelo){
+Surtidor::Surtidor(int _id, int _id_estacion, string modelo){
     id =_id;
-    modelo_maquina = _modelo;
+    modelo_maquina = modelo;
+    id_estacion = _id_estacion;
     ventas = 0.0;
 }
 
 void Surtidor::vender(float cantidad, string region, const string &precio_combustible){
     string precios = Estacion::cambiar_precios(region, precio_combustible);
-    int regular, premium, ecoextra; regular = 0; premium = 0; ecoextra = 0;
+    float regular, premium, ecoextra; regular = 0; premium = 0; ecoextra = 0;
     size_t pos1 = precios.find(":");
     if (pos1 != string::npos){
-        regular = stoi(precios.substr(0, pos1));
+        regular = stof(precios.substr(0, pos1));
         size_t pos2 = precios.find(":");
         if (pos2 != string::npos){
-            premium = stoi(precios.substr(pos1 +1, pos2 - pos1 -1));
-            ecoextra = stoi(precios.substr(pos2 +1));
+            premium = stof(precios.substr(pos1 +1, pos2 - pos1 -1));
+            ecoextra = stof(precios.substr(pos2 +1));
         }
     }
     if (cantidad > 0 ){
@@ -421,31 +524,17 @@ void Surtidor::vender(float cantidad, string region, const string &precio_combus
         cout<<  "Venta realizada en el surtidor ID " << id << ". Total vendido: " << ventas << " unidades." << endl;
     }
 }
-// Método para verificar fugas
-Tanque::Tanque() {
-    srand(static_cast<unsigned int>(time(0))); // Inicializa la semilla
-    for (int i = 0; i < 3; i++) {
-        capacidad[i] = rand() % 101 + 100; // Capacidad aleatoria entre 100 y 200 litros
-        vendidos[i] = 0;
-    }
-}
 
-bool Tanque::verificarFugas() {
-    for (int i = 0; i < 3; i++) {
-        if ((capacidad[i] - vendidos[i]) < (0.05 * capacidad[i])) {
-            cout << "Fuga detectada en categoría " << i << endl;
-            return true;
+// Método para verificar fugas
+void Estacion::verificarFugas(int id, const double (&capacidad_tanque)[4], const double (&vendidos)[4]) {
+    if (capacidad_tanque[0] == id) {
+        for (int i = 1; i < 4; ++i) {
+            if ((capacidad_tanque[i] - vendidos[i]) < (0.05 * capacidad_tanque[i])) {
+                cout << "Fuga detectada en estacion " << id << " en categoría " << i << endl;
+            }
+            else
+                cout << "No se encontraron fugas en la estacion " << id << endl;
         }
-    }
-    return false;
-}
-// Método para vender combustible
-void Tanque::vender(int tipo, int cantidad) {
-    if (capacidad[tipo] >= cantidad) {
-        capacidad[tipo] -= cantidad;
-        vendidos[tipo] += cantidad;
-    } else {
-        vendidos[tipo] += capacidad[tipo]; // Vender lo que hay
-        capacidad[tipo] = 0; // Vaciamos el tanque
+
     }
 }
